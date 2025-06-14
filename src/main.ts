@@ -9,7 +9,7 @@ const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
   0.1,
-  1000000
+  10000000
 );
 
 const light = new THREE.AmbientLight();
@@ -22,6 +22,7 @@ const renderer = new THREE.WebGLRenderer({
   logarithmicDepthBuffer: true,
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio
 document.body.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
 
@@ -43,6 +44,29 @@ const initP3 = new THREE.Vector3(7000000 + orbitalAltitude, 0, 0);
 const initV3 = new THREE.Vector3(0, 8500, 0);
 const satellite3 = new Satellite(initP3, initV3);
 scene.addToScene(satellite3.sphere);
+
+const loader = new THREE.TextureLoader();
+const rt = loader.load("public/textures/corona_rt.png"); // +X
+const lf = loader.load("public/textures/corona_lf.png"); // -X
+const up = loader.load("public/textures/corona_up.png"); // +Y
+const dn = loader.load("public/textures/corona_dn.png"); // -Y
+const ft = loader.load("public/textures/corona_ft.png"); // +Z
+const bk = loader.load("public/textures/corona_bk.png");
+const materials = [
+  new THREE.MeshBasicMaterial({ map: ft, side: THREE.BackSide }), // front
+  new THREE.MeshBasicMaterial({ map: bk, side: THREE.BackSide }), // back
+  new THREE.MeshBasicMaterial({ map: up, side: THREE.BackSide }), // up
+  new THREE.MeshBasicMaterial({ map: dn, side: THREE.BackSide }), // down
+  new THREE.MeshBasicMaterial({ map: rt, side: THREE.BackSide }), // right
+  new THREE.MeshBasicMaterial({ map: lf, side: THREE.BackSide }), // left
+];
+const skyboxGeo = new THREE.BoxGeometry(1000000, 1000000, 1000000);
+const skybox = new THREE.Mesh(skyboxGeo, materials);
+
+scene.addToScene(skybox);
+console.log(skybox.geometry);
+console.log(skybox.material);
+console.log(skybox.position);
 
 // camera.position.z = 30000;
 camera.position.y = 30000;

@@ -9,7 +9,10 @@ export class Earth {
   constructor() {
     const geometry = new THREE.SphereGeometry(Earth_Radius / factor, 64, 64);
 
-    const material = new THREE.MeshStandardMaterial({ color: 0x0077ff });
+    // const material = new THREE.MeshStandardMaterial({ color: 0x0077ff });
+    const material = new THREE.MeshBasicMaterial({
+      map: new THREE.TextureLoader().load("public/textures/globe3.jpg"),
+    });
     this.sphere = new THREE.Mesh(geometry, material);
 
     // const textureLoader = new THREE.TextureLoader();
@@ -25,9 +28,9 @@ export class Earth {
     // );
 
     // const material = new THREE.MeshStandardMaterial({
-    //   map: earthTexture, 
+    //   map: earthTexture,
     //   roughness: 0.9,
-    //   metalness: 0.1, 
+    //   metalness: 0.1,
     // });
     // this.sphere = new THREE.Mesh(geometry, material);
 
