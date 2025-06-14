@@ -2,6 +2,12 @@ import { Vector3 } from "three";
 import * as THREE from "three";
 import { Earth_Mass, factor, G } from "./constants";
 
+
+
+
+
+
+
 export function calculateAcceleration(initPos: Vector3): Vector3 {
   const r = Math.sqrt(
     initPos.x * initPos.x + initPos.y * initPos.y + initPos.z * initPos.z

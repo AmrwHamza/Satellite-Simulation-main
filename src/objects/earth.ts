@@ -9,7 +9,7 @@ import atmosphereFragmentShader from "./shaders/atmosphereFragment.glsl";
 import { scene } from "../main";
 
 export class Earth {
-  public raduis: number = 5;
+  // public raduis: number = 5;
 
   public sphere: THREE.Mesh;
 
