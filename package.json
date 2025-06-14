@@ -15,6 +15,7 @@
     "vite-plugin-string": "^1.2.3"
   },
   "dependencies": {
+    "dat.gui": "^0.7.9",
     "three": "^0.177.0"
   }
 }
