@@ -5,25 +5,30 @@ import { newPosByEUler, newVByEuler } from "../physics/physics";
 import { scene } from "../main";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
+
 export class Satellite {
+
+  public name:string;
   // public sphere: THREE.Mesh;
   public pos: THREE.Vector3;
   public vel: THREE.Vector3;
-  private tailLine: THREE.Line | null = null;
-  public mesh: THREE.Object3D | null = null; // سيحتوي على النموذج المحمل (THREE.Group أو THREE.Mesh)
+public altitude: number=0;
 
+  public tailLine!: THREE.Line;
+  public mesh!: THREE.Object3D;  
   public TAIL_LENGTH = 1000;
   public tailPoints: THREE.Vector3[] = [];
   public tailMaterial: THREE.LineBasicMaterial;
-  constructor(initPos: THREE.Vector3, initV: THREE.Vector3) {
+  constructor(name:string,initPos: THREE.Vector3, initV: THREE.Vector3) {
     // const geometry = new THREE.SphereGeometry(500, 32, 32);
     // const material = new THREE.MeshStandardMaterial({ color: 0xff00ff });
     // this.sphere = new THREE.Mesh(geometry, material);
+   this.name=name,
     this.pos = initPos;
     this.vel = initV;
     // this.setPosition();
 
-    this.tailMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+    this.tailMaterial = new THREE.LineBasicMaterial({ color: 0xED061F });
 
     const loader = new GLTFLoader();
     const dracoLoader = new DRACOLoader();
@@ -33,8 +38,8 @@ export class Satellite {
     loader.load(
       "public/models/Landsat7.glb",
       (gltf) => {
-        this.mesh = gltf.scene; // النموذج المحمل هو عادةً THREE.Group
-        scene.addToScene(this.mesh); // أضف النموذج إلى المشهد الرئيسي
+        this.mesh = gltf.scene; 
+        scene.addToScene(this.mesh);
 
         const satScale=400;
         this.mesh.scale.set(satScale, satScale, satScale);
@@ -75,6 +80,7 @@ export class Satellite {
         this.pos.y * this.pos.y +
         this.pos.z * this.pos.z
     );
+    this.altitude=r;
     if (r == Earth_Radius) {
       return;
     }
