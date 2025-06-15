@@ -7,7 +7,7 @@ export class CameraManager {
       75,
       window.innerWidth / window.innerHeight,
       0.1,
-      10000000
+      100000000
     );
     this.camera.position.z = 30000;
     this.camera.lookAt(0, 0, 0);

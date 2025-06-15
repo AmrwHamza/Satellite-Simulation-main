@@ -13,10 +13,10 @@ export class Stars{
         });
         
         const starVertics = [];
-        for (let i = 0; i < 10000; i++) {
-          const x = (Math.random() - 0.5) * 2000000;
-          const y = (Math.random() - 0.5) * 2000000;
-          const z = (Math.random() - 0.5) * 2000000;
+        for (let i = 0; i < 12000; i++) {
+          const x = (Math.random() - 0.5) * 10000000;
+          const y = (Math.random() - 0.5) * 10000000;
+          const z = (Math.random() - 0.5) * 10000000;
          
           starVertics.push(x, y, z);
         }
