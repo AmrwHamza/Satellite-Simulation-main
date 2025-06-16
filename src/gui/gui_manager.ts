@@ -7,6 +7,7 @@ import { animate, clock, scene } from "../main";
 export const gui = new GUI({
   autoPlace: true,
   title: "Satellite Simulation",
+  width: 300,
 });
 
 export const settings = {
