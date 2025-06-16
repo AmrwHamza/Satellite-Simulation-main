@@ -20,7 +20,7 @@ timeScaleFolder.add(settings, "timeScale", 60, 1000);
 
 const simulationControls = {
   toggleSimulation: () => {
-    settings.isSimulationRunning = !settings.isSimulationRunning; 
+    settings.isSimulationRunning = !settings.isSimulationRunning;
     if (settings.isSimulationRunning) {
       animate();
 
@@ -32,9 +32,7 @@ const simulationControls = {
 };
 
 // const simulationFolder = gui.addFolder("Simulation Controls");
-timeScaleFolder
-  .add(simulationControls, "toggleSimulation")
-  .name("Start/Stop");
+timeScaleFolder.add(simulationControls, "toggleSimulation").name("Start/Stop");
 
 export const satellitsManeger: {
   sat: Satellite;
@@ -56,7 +54,8 @@ function creatSat(
 
   const sat = new Satellite(name, initp, initv);
   const satFolder = gui.addFolder(name);
-  satFolder.add(sat, "altitude").name("position").listen();
+  satFolder.add(sat, "altitude").name("Altitude").listen();
+  satFolder.add(sat, "totalSpeed").name("Speed").listen();
 
   const deleteSatelliteFunc = () => {
     scene.scene.remove(sat.mesh);
@@ -84,7 +83,6 @@ function creatSat(
     if (indexToRemove > -1) {
       satellitsManeger.splice(indexToRemove, 1);
     }
-    console.log(`Satellite ${name} and its folder removed.`);
   };
 
   const satActions = {

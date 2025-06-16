@@ -9,16 +9,26 @@ import { CameraManager } from "./worldManager/camera_maneger";
 import { LightManager } from "./worldManager/light_maneger";
 import { gui, satellitsManeger, settings } from "./gui/gui_manager";
 import { Earth_Radius } from "./physics/constants";
+import { IntroOverlay } from "./inrto/intro";
 
+let isSimulationStarted = false;
+let animationId: number | null = null;
+
+const introOverlay = new IntroOverlay(() => {
+  if (isSimulationStarted) return;
+  isSimulationStarted = true;
+  animateCameraOnStart();
+  animate();
+});
 
 export const scene = new SceneManager();
-const cameraManeger = new CameraManager();
+export const cameraManeger = new CameraManager();
 const lightManager = new LightManager();
 const earth = new Earth();
 const stars = new Stars();
 window.addEventListener("resize", onWindowResize.bind(this), false);
 
-const renderer = new THREE.WebGLRenderer({
+export const renderer = new THREE.WebGLRenderer({
   antialias: true,
 });
 renderer.debug.checkShaderErrors = true;
@@ -26,7 +36,10 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
-const controls = new OrbitControls(cameraManeger.camera, renderer.domElement);
+export const controls = new OrbitControls(
+  cameraManeger.camera,
+  renderer.domElement
+);
 controls.enableDamping = true;
 controls.dampingFactor = 0.06;
 controls.enablePan = false;
@@ -54,7 +67,7 @@ function animateCameraOnStart() {
     });
 
   const lookAtTween = new TWEEN.Tween(controls.target)
-    .to({ x: cameraLookAt.x, y: cameraLookAt.y, z: cameraLookAt.z }, 5000)
+    .to({ x: cameraLookAt.x, y: cameraLookAt.y, z: cameraLookAt.z }, 8000)
     .easing(TWEEN.Easing.Quadratic.Out)
     .onComplete(() => {});
 
@@ -66,13 +79,13 @@ function animateCameraOnStart() {
 controls.update();
 export const clock = new THREE.Clock();
 
-
-
-
 animate();
 
 export function animate() {
-  requestAnimationFrame(animate);
+  if (!isSimulationStarted) {
+    return;
+  }
+  animationId = requestAnimationFrame(animate);
   TWEEN.update();
   if (settings.isSimulationRunning) {
     earth.sphere.rotation.y += 0.001;
@@ -80,7 +93,8 @@ export function animate() {
     const dt_physics = dt_real * settings.timeScale;
     if (dt_physics > 0) {
       satellitsManeger.forEach((satellite) => {
-        satellite.sat.update(dt_physics);
+        // satellite.sat.updateByEuler(dt_physics);
+        satellite.sat.updateByRungeKutta(dt_physics);
       });
     }
   }

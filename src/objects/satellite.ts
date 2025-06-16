@@ -1,34 +1,33 @@
 import * as THREE from "three";
 import { Earth_Radius, factor } from "../physics/constants";
 import { Vector3NodeUniform } from "three/src/renderers/common/nodes/NodeUniform.js";
-import { newPosByEUler, newVByEuler } from "../physics/physics";
+import { calcAltitude, calcRLength, calcSpeed, calculateByRungeKutta, newPosByEUler, newVByEuler } from "../physics/physics";
 import { scene } from "../main";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
 export class Satellite {
-
-  public name:string;
+  public name: string;
   // public sphere: THREE.Mesh;
   public pos: THREE.Vector3;
   public vel: THREE.Vector3;
-public altitude: number=0;
+  public altitude: number = 0;
+  public totalSpeed: number = 0;
 
   public tailLine!: THREE.Line;
-  public mesh!: THREE.Object3D;  
+  public mesh!: THREE.Object3D;
   public TAIL_LENGTH = 1000;
   public tailPoints: THREE.Vector3[] = [];
   public tailMaterial: THREE.LineBasicMaterial;
-  constructor(name:string,initPos: THREE.Vector3, initV: THREE.Vector3) {
+  constructor(name: string, initPos: THREE.Vector3, initV: THREE.Vector3) {
     // const geometry = new THREE.SphereGeometry(500, 32, 32);
     // const material = new THREE.MeshStandardMaterial({ color: 0xff00ff });
     // this.sphere = new THREE.Mesh(geometry, material);
-   this.name=name,
-    this.pos = initPos;
+    (this.name = name), (this.pos = initPos);
     this.vel = initV;
     // this.setPosition();
 
-    this.tailMaterial = new THREE.LineBasicMaterial({ color: 0xED061F });
+    this.tailMaterial = new THREE.LineBasicMaterial({ color: Math.floor(Math.random() * 0xffffff) });
 
     const loader = new GLTFLoader();
     const dracoLoader = new DRACOLoader();
@@ -38,10 +37,10 @@ public altitude: number=0;
     loader.load(
       "public/models/Landsat7.glb",
       (gltf) => {
-        this.mesh = gltf.scene; 
+        this.mesh = gltf.scene;
         scene.addToScene(this.mesh);
 
-        const satScale=400;
+        const satScale = 400;
         this.mesh.scale.set(satScale, satScale, satScale);
 
         this.setPosition();
@@ -74,24 +73,42 @@ public altitude: number=0;
     }
   }
 
-  public update(dt: number) {
-    const r = Math.sqrt(
-      this.pos.x * this.pos.x +
-        this.pos.y * this.pos.y +
-        this.pos.z * this.pos.z
-    );
-    this.altitude=r;
-    if (r == Earth_Radius) {
+  public updateByEuler(dt: number) {
+ 
+    if (this.altitude == Earth_Radius) {
       return;
     }
     const newV: THREE.Vector3 = newVByEuler(this.pos, this.vel, dt);
     this.vel = newV;
     const newPos: THREE.Vector3 = newPosByEUler(this.pos, this.vel, dt);
 
+     this.altitude = calcAltitude(this.pos);
+  this.totalSpeed=calcSpeed(this.vel);
+
     this.pos = newPos;
     this.setPosition();
     this.tailPoints.push(this.getPosInThreeUnits().clone());
     this.drawTail();
+  }
+
+  public updateByRungeKutta(dt: number) {
+
+ 
+ this.altitude = calcAltitude(this.pos);
+ this.totalSpeed=calcSpeed(this.vel);
+
+  let newPV=calculateByRungeKutta(this.pos, this.vel, dt);
+      this.pos=newPV.pos;
+      this.vel=newPV.v;
+      this.setPosition();
+      this.tailPoints.push(this.getPosInThreeUnits().clone());
+      this.drawTail();
+
+
+this.altitude = calcAltitude(this.pos);
+ this.totalSpeed=calcSpeed(this.vel);
+
+
   }
 
   drawTail() {
@@ -107,4 +124,8 @@ public altitude: number=0;
       this.tailLine.geometry = geom;
     }
   }
+
+
+
+  
 }
