@@ -2,23 +2,88 @@ import { Vector3 } from "three";
 import * as THREE from "three";
 import { Earth_Mass, Earth_Radius, factor, G } from "./constants";
 
-export function calculateAcceleration(initPos: Vector3): Vector3 {
+
+
+
+export function calcuateAccformThrust(initV: Vector3,fThrust:number,satMass:number): Vector3{
+
+const vLength=calcRLength(initV);
+
+const vUnit=new Vector3(initV.x/vLength,initV.y/vLength,initV.z/vLength);
+
+
+const ftx= fThrust*vUnit.x;
+const fty= fThrust*vUnit.y;
+const ftz= fThrust*vUnit.z;
+
+const atx=ftx/satMass;
+const aty=fty/satMass;
+const atz=ftz/satMass;
+
+
+return new Vector3(atx,aty,atz);
+}
+
+
+
+
+export function calculateAccFromGravity(initPos: Vector3): Vector3 {
   const r = Math.sqrt(
     initPos.x * initPos.x + initPos.y * initPos.y + initPos.z * initPos.z
   );
   const rCub = r * r * r;
 
+
+
+
   const ax = -G * (Earth_Mass / rCub) * initPos.x;
   const ay = -G * (Earth_Mass / rCub) * initPos.y;
   const az = -G * (Earth_Mass / rCub) * initPos.z;
 
+
   const newAcc: Vector3 = new THREE.Vector3(ax, ay, az);
+
+
+
 
   return newAcc;
 }
 
-export function newVByEuler(pos: Vector3, initV: Vector3, dt: number): Vector3 {
-  const newA: Vector3 = calculateAcceleration(pos);
+
+export function calculateAcceleration(initPos: Vector3,initV: Vector3,fThrust:number,satMass:number): Vector3 {
+  
+  
+  const aFromE=calculateAccFromGravity(initPos);
+  
+const aFromT=calcuateAccformThrust(initV,fThrust,satMass);
+
+
+return new Vector3(aFromE.x+aFromT.x,aFromE.y+aFromT.y,aFromE.z+aFromT.z);
+
+  
+  // const r = Math.sqrt(
+  //   initPos.x * initPos.x + initPos.y * initPos.y + initPos.z * initPos.z
+  // );
+  // const rCub = r * r * r;
+
+
+
+
+  // const ax = -G * (Earth_Mass / rCub) * initPos.x;
+  // const ay = -G * (Earth_Mass / rCub) * initPos.y;
+  // const az = -G * (Earth_Mass / rCub) * initPos.z;
+
+
+  // const newAcc: Vector3 = new THREE.Vector3(ax, ay, az);
+
+
+
+
+  // return newAcc;
+}
+
+export function newVByEuler(pos: Vector3, initV: Vector3,fThrust:number,satMass:number, dt: number): Vector3 {
+  const newA: Vector3 = calculateAcceleration(pos,initV,fThrust,satMass);
 
   const vxNew = initV.x + newA.x * dt;
   const vyNew = initV.y + newA.y * dt;
@@ -49,7 +114,7 @@ let r =pos;
   k1r = v;
 
   let k1v = new Vector3();
-  k1v = calculateAcceleration(pos);
+  // k1v = calculateAcceleration(pos);
 
 /////////////////////////////////////////
 
@@ -67,7 +132,7 @@ let pos2=new Vector3();
   pos2.y=pos.y+h*k1r.y/2;
   pos2.z=pos.z+h*k1r.z/2;
 
-  k2v=calculateAcceleration(pos2);
+  // k2v=calculateAcceleration(pos2);
 
 ///////////////////////////////////////
 
@@ -90,7 +155,7 @@ let pos3=new Vector3();
   pos3.z=pos.z+h*k2r.z/2;
 
 
-  k3v=calculateAcceleration(pos3);
+  // k3v=calculateAcceleration(pos3);
 ///////////////////////////////////////
 
 
@@ -109,7 +174,7 @@ let pos4=new Vector3();
   pos4.y=pos.y+h*k3r.y;
   pos4.z=pos.z+h*k3r.z;
 
-k4v=calculateAcceleration(pos4);
+// k4v=calculateAcceleration(pos4);
 
 
 ////////////////////////////////////

@@ -4,6 +4,7 @@ import GUI from "three/examples/jsm/libs/lil-gui.module.min.js";
 import { Satellite } from "../objects/satellite";
 import { animate, clock, scene } from "../main";
 
+// import { gui, satellitsManeger, settings } from "./gui/gui_manager";
 export const gui = new GUI({
   autoPlace: true,
   title: "Satellite Simulation",
@@ -13,6 +14,11 @@ export const gui = new GUI({
 export const settings = {
   timeScale: 500,
   isSimulationRunning: true,
+
+///////////////
+  
+ thrustMagnitude: 500,
+ thrustDirection: 0,
 };
 
 const timeScaleFolder = gui.addFolder("simulation settings");
@@ -58,14 +64,25 @@ function creatSat(
   satFolder.add(sat, "altitude").name("Altitude").listen();
   satFolder.add(sat, "totalSpeed").name("Speed").listen();
 
-  //  const PREDICTED_ORBIT_STEPS = 10000;
-  //   const PREDICTED_ORBIT_DT = 60; // seconds
-  sat.calcAndDrawPredicOrbit(initp, initv);
+
+   const PREDICTED_ORBIT_STEPS = 10000; 
+    const PREDICTED_ORBIT_DT = 60; // seconds
+    sat.calculateAndDrawPredictedOrbit(initp.clone(), initv.clone(), PREDICTED_ORBIT_STEPS, PREDICTED_ORBIT_DT);
+
+   const thrustFolder = satFolder.addFolder("Thruster Controls");
+  thrustFolder.add(settings, "thrustMagnitude", 0, 10000000).name("N THRUST"); 
+  thrustFolder.add(settings, "thrustDirection", { '0': 0, '-1': -1, '1': 1 })
+              .name("THRUST DIRECTION")
+              .onChange(() => {
+                  sat.calculateAndDrawPredictedOrbit(sat.pos.clone(), sat.vel.clone(), PREDICTED_ORBIT_STEPS, PREDICTED_ORBIT_DT);
+              });
+  // --------------
+
 
   const deleteSatelliteFunc = () => {
     scene.scene.remove(sat.mesh);
     scene.scene.remove(sat.tailLine);
-
+scene.scene.remove(sat.predictedTailLine);
     if (sat.mesh instanceof THREE.Mesh) {
       sat.mesh.geometry.dispose();
       if (Array.isArray(sat.mesh.material)) {

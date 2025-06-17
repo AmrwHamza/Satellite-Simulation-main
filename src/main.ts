@@ -91,10 +91,17 @@ export function animate() {
     earth.sphere.rotation.y += 0.001;
     const dt_real = clock.getDelta();
     const dt_physics = dt_real * settings.timeScale;
+   
+          //  console.log("Main Loop - dt_physics:", dt_physics);
+
     if (dt_physics > 0) {
+       console.log("محتوى satellitsManeger:", satellitsManeger);
+
       satellitsManeger.forEach((satellite) => {
-        // satellite.sat.updateByEuler(dt_physics);
-        satellite.sat.updateByRungeKutta(dt_physics);
+
+
+        satellite.sat.updateByEuler(dt_physics);
+        // satellite.sat.updateByRungeKutta(dt_physics);
       });
     }
   }
