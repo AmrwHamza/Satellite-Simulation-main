@@ -1,7 +1,14 @@
 import * as THREE from "three";
 import { Earth_Radius, factor } from "../physics/constants";
 import { Vector3NodeUniform } from "three/src/renderers/common/nodes/NodeUniform.js";
-import { calcAltitude, calcRLength, calcSpeed, calculateByRungeKutta, newPosByEUler, newVByEuler } from "../physics/physics";
+import {
+  calcAltitude,
+  calcRLength,
+  calcSpeed,
+  calculateByRungeKutta,
+  newPosByEUler,
+  newVByEuler,
+} from "../physics/physics";
 import { scene } from "../main";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
@@ -19,6 +26,12 @@ export class Satellite {
   public TAIL_LENGTH = 1000;
   public tailPoints: THREE.Vector3[] = [];
   public tailMaterial: THREE.LineBasicMaterial;
+
+  ///////////////////
+  public predictedTailLine!: THREE.Line;
+  public predictedTailPoints: THREE.Vector3[] = [];
+  public predictedTailMaterial: THREE.LineBasicMaterial | undefined;
+
   constructor(name: string, initPos: THREE.Vector3, initV: THREE.Vector3) {
     // const geometry = new THREE.SphereGeometry(500, 32, 32);
     // const material = new THREE.MeshStandardMaterial({ color: 0xff00ff });
@@ -27,7 +40,9 @@ export class Satellite {
     this.vel = initV;
     // this.setPosition();
 
-    this.tailMaterial = new THREE.LineBasicMaterial({ color: Math.floor(Math.random() * 0xffffff) });
+    this.tailMaterial = new THREE.LineBasicMaterial({
+      color: Math.floor(Math.random() * 0xffffff),
+    });
 
     const loader = new GLTFLoader();
     const dracoLoader = new DRACOLoader();
@@ -74,7 +89,6 @@ export class Satellite {
   }
 
   public updateByEuler(dt: number) {
- 
     if (this.altitude == Earth_Radius) {
       return;
     }
@@ -82,8 +96,8 @@ export class Satellite {
     this.vel = newV;
     const newPos: THREE.Vector3 = newPosByEUler(this.pos, this.vel, dt);
 
-     this.altitude = calcAltitude(this.pos);
-  this.totalSpeed=calcSpeed(this.vel);
+    this.altitude = calcAltitude(this.pos);
+    this.totalSpeed = calcSpeed(this.vel);
 
     this.pos = newPos;
     this.setPosition();
@@ -92,23 +106,18 @@ export class Satellite {
   }
 
   public updateByRungeKutta(dt: number) {
+    this.altitude = calcAltitude(this.pos);
+    this.totalSpeed = calcSpeed(this.vel);
 
- 
- this.altitude = calcAltitude(this.pos);
- this.totalSpeed=calcSpeed(this.vel);
+    let newPV = calculateByRungeKutta(this.pos, this.vel, dt);
+    this.pos = newPV.pos;
+    this.vel = newPV.v;
+    this.setPosition();
+    this.tailPoints.push(this.getPosInThreeUnits().clone());
+    this.drawTail();
 
-  let newPV=calculateByRungeKutta(this.pos, this.vel, dt);
-      this.pos=newPV.pos;
-      this.vel=newPV.v;
-      this.setPosition();
-      this.tailPoints.push(this.getPosInThreeUnits().clone());
-      this.drawTail();
-
-
-this.altitude = calcAltitude(this.pos);
- this.totalSpeed=calcSpeed(this.vel);
-
-
+    this.altitude = calcAltitude(this.pos);
+    this.totalSpeed = calcSpeed(this.vel);
   }
 
   drawTail() {
@@ -125,7 +134,44 @@ this.altitude = calcAltitude(this.pos);
     }
   }
 
+  public calcAndDrawPredicOrbit(
+    initialPos: THREE.Vector3,
+    initialVel: THREE.Vector3
+  ) {
+    let steps = 10000;
+    let dt = 60;
+    this.predictedTailPoints = [];
+    let currentPos = initialPos;
+    let currentVel = initialVel;
 
+    for (let i = 0; i < steps; i++) {
+      this.predictedTailPoints.push(
+        new THREE.Vector3(
+          currentPos.x / factor,
+          currentPos.y / factor,
+          currentPos.z / factor
+        )
+      );
 
-  
+      const newPV = calculateByRungeKutta(currentPos, currentVel, dt);
+      currentPos = newPV.pos;
+      currentVel = newPV.v;
+
+      if (calcAltitude(currentPos) <= 0) {
+        console.warn(`Predicted orbit crashed into Earth after ${i} steps.`);
+        break;
+      }
+    }
+
+    const geom = new THREE.BufferGeometry().setFromPoints(
+      this.predictedTailPoints
+    );
+    if (!this.predictedTailLine) {
+      this.predictedTailLine = new THREE.Line(geom, this.predictedTailMaterial);
+      scene.addToScene(this.predictedTailLine);
+    } else {
+      this.predictedTailLine.geometry.dispose();
+      this.predictedTailLine.geometry = geom;
+    }
+  }
 }

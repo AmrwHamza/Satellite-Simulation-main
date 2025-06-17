@@ -1,4 +1,4 @@
-precision mediump float;           // ضروري
+precision mediump float;           
 
 varying vec3 vertexNormal;
 

@@ -58,6 +58,10 @@ function creatSat(
   satFolder.add(sat, "altitude").name("Altitude").listen();
   satFolder.add(sat, "totalSpeed").name("Speed").listen();
 
+  //  const PREDICTED_ORBIT_STEPS = 10000;
+  //   const PREDICTED_ORBIT_DT = 60; // seconds
+  sat.calcAndDrawPredicOrbit(initp, initv);
+
   const deleteSatelliteFunc = () => {
     scene.scene.remove(sat.mesh);
     scene.scene.remove(sat.tailLine);
