@@ -9,17 +9,9 @@ import atmosphereFragmentShader from "./shaders/atmosphereFragment.glsl";
 import { scene } from "../main";
 
 export class Earth {
-  // public raduis: number = 5;
-
   public sphere: THREE.Mesh;
-
   constructor() {
     const geometry = new THREE.SphereGeometry(Earth_Radius / factor, 64, 64);
-
-    // const material = new THREE.MeshStandardMaterial({ color: 0x0077ff });
-    console.log("vertexShader length:", vertexShader.length);
-    console.log("fragmentShader length:", fragmentShader.length);
-
     const material = new THREE.ShaderMaterial({
       vertexShader,
       fragmentShader,
@@ -29,8 +21,8 @@ export class Earth {
         },
       },
     });
-    this.sphere = new THREE.Mesh(geometry, material);
 
+    this.sphere = new THREE.Mesh(geometry, material);
     this.sphere.position.set(0, 0, 0);
 
     const atmosphere = new THREE.Mesh(
@@ -49,7 +41,6 @@ export class Earth {
 
     this.sphere.renderOrder = 0;
     atmosphere.renderOrder = 1;
-    // scene.addToScene(atmosphere);
 
     const group = new THREE.Group();
     group.add(this.sphere);

@@ -92,20 +92,13 @@ export class Satellite {
 
   public updateByEuler(dt: number) {
   let effectiveThrustMagnitude = 0;
-    if (settings.thrustDirection === 1) { // دفع أمامي
+    if (settings.thrustDirection === 1) {
         effectiveThrustMagnitude = settings.thrustMagnitude;
-    } else if (settings.thrustDirection === -1) { // دفع عكسي
+    } else if (settings.thrustDirection === -1) { 
         effectiveThrustMagnitude = -settings.thrustMagnitude;
     }
 
 
-    //  if (this.altitude <= Earth_Radius) {
-    //     // يمكنك هنا إعادة ضبط السرعة والموضع لإيقاف القمر تماماً عند الاصطدام
-    //     // أو إزالته من المشهد. حالياً، سيوقف التحديثات الفيزيائية له فقط.
-    //     this.vel.set(0, 0, 0); // اجعل السرعة صفر لمنعه من الغوص أكثر
-    //     // يمكنك أيضاً إزالة القمر الصناعي من satellitsManeger إذا أردت
-    //     return; 
-    // }
     const SATELLITE_MASS = 1000;
 
     const newV: THREE.Vector3 = newVByEuler(
@@ -118,13 +111,6 @@ export class Satellite {
     this.vel = newV;
     const newPos: THREE.Vector3 = newPosByEUler(this.pos, this.vel, dt);
 
-  // --- أضف هذه الأسطر هنا (بعد حساب newPos و newV وتعيينهما لـ this.pos و this.vel) ---
-    console.log(`Satellite ${this.name} - dt_physics: ${dt}`);
-    console.log(`Satellite ${this.name} - Pos (meters): X=${this.pos.x.toFixed(2)}, Y=${this.pos.y.toFixed(2)}, Z=${this.pos.z.toFixed(2)}`);
-    console.log(`Satellite ${this.name} - Vel (m/s): Vx=${this.vel.x.toFixed(2)}, Vy=${this.vel.y.toFixed(2)}, Vz=${this.vel.z.toFixed(2)}`);
-    console.log(`Satellite ${this.name} - Mesh Pos (Three.js units): X=${this.mesh.position.x.toFixed(2)}, Y=${this.mesh.position.y.toFixed(2)}, Z=${this.mesh.position.z.toFixed(2)}`);
-    // 
-
 
     this.altitude = calcAltitude(this.pos);
     this.totalSpeed = calcSpeed(this.vel);
@@ -134,16 +120,19 @@ export class Satellite {
     this.tailPoints.push(this.getPosInThreeUnits().clone());
     this.drawTail();
 
-    //  if (settings.progradeThrustOn || settings.retrogradeThrustOn) {
-    //       this.calculateAndDrawPredictedOrbit(this.pos.clone(), this.vel.clone(), this.TAIL_LENGTH, dt); // استخدم نفس الـ dt
-    //   }
   }
 
   public updateByRungeKutta(dt: number) {
-    //  this.altitude = calcAltitude(this.pos);
-    //  this.totalSpeed=calcSpeed(this.vel);
+ let effectiveThrustMagnitude = 0;
+        if (settings.thrustDirection === 1) { 
+            effectiveThrustMagnitude = settings.thrustMagnitude;
+        } else if (settings.thrustDirection === -1) { 
+            effectiveThrustMagnitude = -settings.thrustMagnitude;
+        }
+        const SATELLITE_MASS = 1000;
 
-    let newPV = calculateByRungeKutta(this.pos, this.vel, dt);
+
+    let newPV = calculateByRungeKutta(this.pos, this.vel, dt,effectiveThrustMagnitude, SATELLITE_MASS);
     this.pos = newPV.pos;
     this.vel = newPV.v;
     this.setPosition();
@@ -174,12 +163,10 @@ export class Satellite {
     steps: number,
     dt: number
   ) {
-    steps = 1000;
-    dt = 60;
+    
     this.predictedTailPoints = [];
-    let currentPos = initialPos;
-    let currentVel = initialVel;
-
+    let currentPos = initialPos.clone(); 
+        let currentVel = initialVel.clone(); 
     const PREDICTION_THRUST_MAGNITUDE = 0;
     const PREDICTION_SATELLITE_MASS = 1000;
 
@@ -192,21 +179,27 @@ export class Satellite {
         )
       );
 
-      // const newPV = calculateByRungeKutta(currentPos, currentVel, dt);
-      // currentPos = newPV.pos;
-      // currentVel = newPV.v;
+     let newPV = calculateByRungeKutta(
+                currentPos,
+                currentVel,
+                dt,
+                PREDICTION_THRUST_MAGNITUDE, 
+                PREDICTION_SATELLITE_MASS
+            );
+            currentPos.copy(newPV.pos); 
+            currentVel.copy(newPV.v);
 
       //////////////////////
-      const newV = newVByEuler(
-        currentPos,
-        currentVel,
-        PREDICTION_THRUST_MAGNITUDE,
-        PREDICTION_SATELLITE_MASS,
-        dt
-      );
-      currentVel.copy(newV); // تحديث السرعة الحالية
-      const newPos = newPosByEUler(currentPos, currentVel, dt); // حساب الموضع بالسرعة المحدثة
-      currentPos.copy(newPos); // تحديث الموضع الحالي
+      // const newV = newVByEuler(
+      //   currentPos,
+      //   currentVel,
+      //   PREDICTION_THRUST_MAGNITUDE,
+      //   PREDICTION_SATELLITE_MASS,
+      //   dt
+      // );
+      // currentVel.copy(newV); // تحديث السرعة الحالية
+      // const newPos = newPosByEUler(currentPos, currentVel, dt); // حساب الموضع بالسرعة المحدثة
+      // currentPos.copy(newPos); // تحديث الموضع الحالي
 
       if (calcAltitude(currentPos) <= 0) {
         console.warn(`Predicted orbit crashed into Earth after ${i} steps.`);
@@ -226,3 +219,18 @@ export class Satellite {
     }
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

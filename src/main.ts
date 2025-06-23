@@ -1,14 +1,12 @@
 import * as THREE from "three";
 import * as TWEEN from "@tweenjs/tween.js";
 import { Earth } from "./objects/earth";
-import { Satellite } from "./objects/satellite";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { SceneManager } from "./worldManager/scene_manager";
 import { Stars } from "./objects/stars";
 import { CameraManager } from "./worldManager/camera_maneger";
 import { LightManager } from "./worldManager/light_maneger";
 import { gui, satellitsManeger, settings } from "./gui/gui_manager";
-import { Earth_Radius } from "./physics/constants";
 import { IntroOverlay } from "./inrto/intro";
 
 let isSimulationStarted = false;
@@ -100,17 +98,12 @@ export function animate() {
       satellitsManeger.forEach((satellite) => {
 
 
-        satellite.sat.updateByEuler(dt_physics);
-        // satellite.sat.updateByRungeKutta(dt_physics);
+        // satellite.sat.updateByEuler(dt_physics);
+        satellite.sat.updateByRungeKutta(dt_physics);
       });
     }
   }
-  // camera.position.set(
-  //   satellite2.getPosInThreeUnits().x + 200,
-  //   satellite2.getPosInThreeUnits().y + 200,
-  //   satellite2.getPosInThreeUnits().z + 200
-  // );
-  // camera.lookAt(0, 0, 0);
+  
   controls.update();
 
   renderer.render(scene.scene, cameraManeger.camera);

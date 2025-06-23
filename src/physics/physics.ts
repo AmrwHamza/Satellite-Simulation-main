@@ -61,25 +61,7 @@ const aFromT=calcuateAccformThrust(initV,fThrust,satMass);
 return new Vector3(aFromE.x+aFromT.x,aFromE.y+aFromT.y,aFromE.z+aFromT.z);
 
   
-  // const r = Math.sqrt(
-  //   initPos.x * initPos.x + initPos.y * initPos.y + initPos.z * initPos.z
-  // );
-  // const rCub = r * r * r;
-
-
-
-
-  // const ax = -G * (Earth_Mass / rCub) * initPos.x;
-  // const ay = -G * (Earth_Mass / rCub) * initPos.y;
-  // const az = -G * (Earth_Mass / rCub) * initPos.z;
-
-
-  // const newAcc: Vector3 = new THREE.Vector3(ax, ay, az);
-
-
-
-
-  // return newAcc;
+  
 }
 
 export function newVByEuler(pos: Vector3, initV: Vector3,fThrust:number,satMass:number, dt: number): Vector3 {
@@ -105,16 +87,16 @@ export function newPosByEUler(pos: Vector3, v: Vector3, dt: number): Vector3 {
 export function calculateByRungeKutta(
   pos: Vector3,
   v: Vector3,
-  h: number
+  h: number,fThrust:number,satMass:number
 ): { v: Vector3; pos: Vector3 } {
 
 let r =pos;
 
   let k1r = new Vector3();
-  k1r = v;
+  k1r = v.clone();
 
   let k1v = new Vector3();
-  // k1v = calculateAcceleration(pos);
+  k1v = calculateAcceleration(pos,v,fThrust,satMass);
 
 /////////////////////////////////////////
 
@@ -128,11 +110,17 @@ let r =pos;
 
   let k2v=new Vector3();
 let pos2=new Vector3();
-  pos2.x=pos.x+h*k1r.x/2;
-  pos2.y=pos.y+h*k1r.y/2;
-  pos2.z=pos.z+h*k1r.z/2;
+ let posClone = pos.clone();
 
-  // k2v=calculateAcceleration(pos2);
+  pos2.x=posClone.x+h*k1r.x/2;
+  pos2.y=posClone.y+h*k1r.y/2;
+  pos2.z=posClone.z+h*k1r.z/2;
+
+  k2v=calculateAcceleration(pos2,new Vector3(
+    v.x + h * k1v.x / 2,
+    v.y + h * k1v.y / 2,
+    v.z + h * k1v.z / 2
+  ), fThrust,satMass);
 
 ///////////////////////////////////////
 
@@ -150,13 +138,17 @@ let pos2=new Vector3();
 let pos3=new Vector3();
 
 
-  pos3.x=pos.x+h*k2r.x/2;
-  pos3.y=pos.y+h*k2r.y/2;
-  pos3.z=pos.z+h*k2r.z/2;
+pos3 = pos.clone();
+  pos3.x=pos3.x+h*k2r.x/2; 
+  pos3.y=pos3.y+h*k2r.y/2;
+  pos3.z=pos3.z+h*k2r.z/2;
 
-
-  // k3v=calculateAcceleration(pos3);
-///////////////////////////////////////
+ k3v=calculateAcceleration(pos3, new Vector3(
+    v.x + h * k2v.x / 2,
+    v.y + h * k2v.y / 2,
+    v.z + h * k2v.z / 2
+  ), fThrust,satMass);
+  ///////////////////////////////////////
 
 
 
@@ -170,12 +162,17 @@ let k4r= new Vector3();
 let k4v=new Vector3();
 let pos4=new Vector3();
 
-  pos4.x=pos.x+h*k3r.x;
-  pos4.y=pos.y+h*k3r.y;
-  pos4.z=pos.z+h*k3r.z;
+  pos4 = pos.clone();
+  pos4.x=pos4.x+h*k3r.x; 
+  pos4.y=pos4.y+h*k3r.y;
+  pos4.z=pos4.z+h*k3r.z;
 
-// k4v=calculateAcceleration(pos4);
 
+k4v=calculateAcceleration(pos4, new Vector3(
+  v.x + h * k3v.x,
+  v.y + h * k3v.y,
+  v.z + h * k3v.z
+), fThrust,satMass);
 
 ////////////////////////////////////
 

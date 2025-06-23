@@ -47,6 +47,8 @@ export const satellitsManeger: {
   deleteAction: () => void;
 }[] = [];
 
+
+
 function creatSat(
   initx: number,
   inity: number,
@@ -70,7 +72,7 @@ function creatSat(
     sat.calculateAndDrawPredictedOrbit(initp.clone(), initv.clone(), PREDICTED_ORBIT_STEPS, PREDICTED_ORBIT_DT);
 
    const thrustFolder = satFolder.addFolder("Thruster Controls");
-  thrustFolder.add(settings, "thrustMagnitude", 0, 10000000).name("N THRUST"); 
+  thrustFolder.add(settings, "thrustMagnitude", 0, 10000000).name("N"); 
   thrustFolder.add(settings, "thrustDirection", { '0': 0, '-1': -1, '1': 1 })
               .name("THRUST DIRECTION")
               .onChange(() => {
