@@ -106,6 +106,8 @@ export function animate() {
       satellitsManeger.forEach((satellite) => {
         // satellite.sat.updateByEuler(dt_physics);
         satellite.sat.updateByRungeKutta(dt_physics);
+        // satellite.sat.calculateAndDrawPredictedOrbit();
+
       });
     }
   }

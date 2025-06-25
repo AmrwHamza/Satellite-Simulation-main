@@ -2,7 +2,7 @@ import { Vector3 } from "three";
 import * as THREE from "three";
 import { Earth_Mass, Earth_Radius,  G } from "./constants";
 
-export function calcuateAccformThrust(
+export function calcuateAccformTThrust(
   initV: Vector3,
   fThrust: number,
   satMass: number
@@ -26,6 +26,75 @@ export function calcuateAccformThrust(
   return new Vector3(atx, aty, atz);
 }
 
+
+export function calcuateAccformNThrust(r:Vector3,v:Vector3,fThrust: number,mass: number):Vector3{
+
+
+
+
+ const hx = r.y * v.z - r.z * v.y;
+            const hy = r.z * v.x - r.x * v.z;
+            const hz = r.x * v.y - r.y * v.x;
+
+            const hVector = new Vector3(hx, hy, hz);
+
+const hLength = calcRLength(hVector); 
+
+  if (hLength === 0) {
+                return new Vector3(0, 0, 0); // لا يوجد متجه عمودي محدد
+            } 
+
+
+
+ const nUnit = new Vector3(
+                hVector.x / hLength,
+                hVector.y / hLength,
+                hVector.z / hLength
+            );
+
+  const fNx = fThrust * nUnit.x;
+  const fNy = fThrust * nUnit.y;
+  const fNz = fThrust * nUnit.z;
+
+  const aNx = fNx / mass;
+  const aNy = fNy / mass;
+  const aNz = fNz / mass;
+
+
+  return new Vector3(aNx, aNy, aNz);
+
+
+}
+
+
+
+export function calcuateAccformRThrust(
+  r: Vector3,
+  fThrust: number,
+  satMass: number
+): Vector3 {
+  const rLength = calcRLength(r);
+
+  const rUnit = new Vector3(
+    r.x / rLength,
+    r.y / rLength,
+    r.z / rLength
+  );
+
+  const fRx = fThrust * rUnit.x;
+  const fRy = fThrust * rUnit.y;
+  const fRz = fThrust * rUnit.z;
+
+  const aRx = fRx / satMass;
+  const aRy = fRy / satMass;
+  const aRz = fRz / satMass;
+
+  return new Vector3(aRx, aRy, aRz);
+}
+
+
+
+
 export function calculateAccFromGravity(initPos: Vector3): Vector3 {
   const r = Math.sqrt(
     initPos.x * initPos.x + initPos.y * initPos.y + initPos.z * initPos.z
@@ -41,31 +110,41 @@ export function calculateAccFromGravity(initPos: Vector3): Vector3 {
   return newAcc;
 }
 
+
+
+
 export function calculateAcceleration(
   initPos: Vector3,
   initV: Vector3,
-  fThrust: number,
+  fTThrust: number,
+  fNThrust: number,
+  fRThrust: number,
   satMass: number
 ): Vector3 {
   const aFromE = calculateAccFromGravity(initPos);
 
-  const aFromT = calcuateAccformThrust(initV, fThrust, satMass);
+  const aFromT = calcuateAccformTThrust(initV, fTThrust, satMass);
+
+  const aFromN=calcuateAccformNThrust(initPos,initV,fNThrust,satMass);
+  const aFromR = calcuateAccformRThrust(initPos, fRThrust, satMass);
 
   return new Vector3(
-    aFromE.x + aFromT.x,
-    aFromE.y + aFromT.y,
-    aFromE.z + aFromT.z
+    aFromE.x + aFromT.x+aFromN.x+aFromR.x,
+    aFromE.y + aFromT.y+aFromN.y+aFromR.y,
+    aFromE.z + aFromT.z+aFromN.z+aFromR.z  
   );
 }
 
 export function newVByEuler(
   pos: Vector3,
   initV: Vector3,
-  fThrust: number,
+  fTThrust: number,
+    fNThrust: number,
+  fRThrust: number,
   satMass: number,
   dt: number
 ): Vector3 {
-  const newA: Vector3 = calculateAcceleration(pos, initV, fThrust, satMass);
+  const newA: Vector3 = calculateAcceleration(pos, initV, fTThrust, fNThrust, fRThrust, satMass);
 
   const vxNew = initV.x + newA.x * dt;
   const vyNew = initV.y + newA.y * dt;
@@ -89,6 +168,8 @@ export function calculateByRungeKutta(
   v: Vector3,
   h: number,
   fThrust: number,
+  fNThrust: number,
+  fRThrust: number,
   satMass: number
 ): { v: Vector3; pos: Vector3 } {
   let r = pos;
@@ -97,7 +178,7 @@ export function calculateByRungeKutta(
   k1r = v.clone();
 
   let k1v = new Vector3();
-  k1v = calculateAcceleration(pos, v, fThrust, satMass);
+  k1v = calculateAcceleration(pos, v, fThrust, fNThrust, fRThrust, satMass);
 
   /////////////////////////////////////////
 
@@ -123,6 +204,8 @@ export function calculateByRungeKutta(
       v.z + (h * k1v.z) / 2
     ),
     fThrust,
+    fNThrust,
+    fRThrust,
     satMass
   );
 
@@ -150,6 +233,8 @@ export function calculateByRungeKutta(
       v.z + (h * k2v.z) / 2
     ),
     fThrust,
+    fNThrust,
+    fRThrust,
     satMass
   );
   ///////////////////////////////////////
@@ -171,6 +256,8 @@ export function calculateByRungeKutta(
     pos4,
     new Vector3(v.x + h * k3v.x, v.y + h * k3v.y, v.z + h * k3v.z),
     fThrust,
+    fNThrust,
+    fRThrust,
     satMass
   );
 

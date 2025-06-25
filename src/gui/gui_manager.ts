@@ -10,17 +10,21 @@ export const gui = new GUI({
   width: 300,
 });
 
- const PREDICTED_ORBIT_STEPS = 10000;
-  const PREDICTED_ORBIT_DT = 60;
+export const PREDICTED_ORBIT_STEPS = 1000;
+export const PREDICTED_ORBIT_DT = 60;
 
 //قسم الاعدادات الاساسية للمحاكاة ايقاف,تسريع
 /////////////////////////////////////
 export const settings = {
   timeScale: 500,
   isSimulationRunning: true,
-  thrustMagnitude: 50,
-  thrustDirection: 0,
-   showInitialPredictedPath: true, 
+  thrustTF: 50,
+  thrustTDirection: 0,
+  thrustNF:50,
+  thrustNDirection: 0,
+  thrustRF:50,
+  thrustRDirection: 0,
+  showInitialPredictedPath: true,
 };
 const timeScaleFolder = gui.addFolder("simulation settings");
 timeScaleFolder.add(settings, "timeScale", 60, 1000);
@@ -39,8 +43,6 @@ timeScaleFolder.add(simulationControls, "toggleSimulation").name("Start/Stop");
 
 ///////////////////////////////////
 
-
-
 //اعدادات انشاء قمر صناعي
 ////////////////////////////////
 export const satellitsManeger: {
@@ -48,8 +50,6 @@ export const satellitsManeger: {
   folder: GUI;
   deleteAction: () => void;
 }[] = [];
-
-
 
 const initSatSettings = {
   X: 8000000,
@@ -75,7 +75,10 @@ const initSatSettings = {
 };
 
 const addSatFolder = gui.addFolder("Add Satellite");
-addSatFolder.add(settings, 'showInitialPredictedPath').name('Show Initial Path').onChange(updatePathPreview);
+addSatFolder
+  .add(settings, "showInitialPredictedPath")
+  .name("Show Initial Path")
+  .onChange(updatePathPreview);
 
 function creatSat(
   initx: number,
@@ -94,38 +97,85 @@ function creatSat(
   satFolder.add(sat, "altitude").name("Altitude").listen();
   satFolder.add(sat, "totalSpeed").name("Speed").listen();
 
- 
   sat.calculateAndDrawPredictedOrbit(
     initp.clone(),
     initv.clone(),
     PREDICTED_ORBIT_STEPS,
     PREDICTED_ORBIT_DT,
-    0
+    0,0,0
   );
 
-  const thrustFolder = satFolder.addFolder("Thruster Controls");
-  thrustFolder.add(settings, "thrustMagnitude", 0, 10000000).name("N");
-  thrustFolder
-    .add(settings, "thrustDirection", { "0": 0, "-1": -1, "1": 1 })
-    .name("THRUST DIRECTION")
-    .onChange(() => {
-    let effectiveThrustMagnitude = 0;
-    if (settings.thrustDirection === 1) {
-      effectiveThrustMagnitude = settings.thrustMagnitude;
-    } else if (settings.thrustDirection === -1) {
-      effectiveThrustMagnitude = -settings.thrustMagnitude;
-    }
+const thrustTFolder = satFolder.addFolder("Thrust T Controls");
+thrustTFolder.add(settings, "thrustTF", 0, 10000000).name("Thrust Force (N)");
+thrustTFolder
+  .add(settings, "thrustTDirection", -1, 1, 1) // هنا التعديل: min=-1, max=1, step=1
+  .name("Thrust Direction")
+  .onChange(updateThrustsAndOrbit);
 
-  
-    sat.calculateAndDrawPredictedOrbit(
-      sat.pos.clone(),
-      sat.vel.clone(),
-      PREDICTED_ORBIT_STEPS,
-      PREDICTED_ORBIT_DT,
-      effectiveThrustMagnitude 
-    );
-    });
-//تابع حذف القمر
+const thrustNFolder = satFolder.addFolder("Thrust N Controls");
+thrustNFolder.add(settings, "thrustNF", 0, 10000000).name("Thrust Force (N)");
+thrustNFolder
+  .add(settings, "thrustNDirection", -1, 1, 1) // هنا التعديل: min=-1, max=1, step=1
+  .name("Thrust Direction")
+  .onChange(updateThrustsAndOrbit);
+
+const thrustRFolder = satFolder.addFolder("Thrust R Controls");
+thrustRFolder.add(settings, "thrustRF", 0, 10000000).name("Thrust Force (N)");
+thrustRFolder
+  .add(settings, "thrustRDirection", -1, 1, 1) // هنا التعديل: min=-1, max=1, step=1
+  .name("Thrust Direction")
+  .onChange(updateThrustsAndOrbit);
+
+
+function updateThrustsAndOrbit() {
+  let thrustTForce = 0;
+  if (settings.thrustTDirection === 1) {
+    thrustTForce = settings.thrustTF;
+  } else if (settings.thrustTDirection === -1) {
+    thrustTForce = -settings.thrustTF;
+  }
+
+  let thrustNForce = 0;
+  if (settings.thrustNDirection === 1) {
+    thrustNForce = settings.thrustNF;
+  } else if (settings.thrustNDirection === -1) {
+    thrustNForce = -settings.thrustNF;
+  }
+
+  let thrustRForce = 0;
+  if (settings.thrustRDirection === 1) {
+    thrustRForce = settings.thrustRF;
+  } else if (settings.thrustRDirection === -1) {
+    thrustRForce = -settings.thrustRF;
+  }
+
+  sat.calculateAndDrawPredictedOrbit(
+    sat.pos.clone(),
+    sat.vel.clone(),
+    PREDICTED_ORBIT_STEPS,
+    PREDICTED_ORBIT_DT,
+    thrustTForce,
+    thrustNForce,
+    thrustRForce
+  );
+}
+
+// ملاحظة: تأكد من أن كائن 'settings' يحتوي على الخصائص التالية بقيم افتراضية:
+// settings = {
+//   thrustTF: 0,
+//   thrustTDirection: 0, // قيمة افتراضية مناسبة للشريط الجديد
+//   thrustNF: 0,
+//   thrustNDirection: 0, // قيمة افتراضية مناسبة للشريط الجديد
+//   thrustRF: 0,
+//   thrustRDirection: 0, // قيمة افتراضية مناسبة للشريط الجديد
+//   // ... أي إعدادات أخرى
+// };
+
+
+    
+
+
+  //تابع حذف القمر
   const deleteSatelliteFunc = () => {
     scene.scene.remove(sat.mesh);
     scene.scene.remove(sat.tailLine);
@@ -166,7 +216,6 @@ function creatSat(
   });
 }
 
-
 addSatFolder
   .add(initSatSettings, "X", -10000000, 10000000)
   .onChange(updatePathPreview);
@@ -187,15 +236,9 @@ addSatFolder
   .onChange(updatePathPreview);
 addSatFolder.add(initSatSettings, "add_Sat");
 
-
-
-
 let pathPreviewLine: THREE.Line | null = null;
 function updatePathPreview() {
-
-
-
- if (!settings.showInitialPredictedPath) {
+  if (!settings.showInitialPredictedPath) {
     if (pathPreviewLine) {
       scene.scene.remove(pathPreviewLine);
       pathPreviewLine.geometry.dispose();
@@ -208,8 +251,6 @@ function updatePathPreview() {
     }
     return;
   }
-
-
 
   const initp = new THREE.Vector3(
     initSatSettings.X,
@@ -235,11 +276,10 @@ function updatePathPreview() {
     pathPreviewLine = null;
   }
 
- 
   pathPreviewLine = sat.calculateAndDrawPredictedOrbit(
     sat.pos.clone(),
     sat.vel.clone(),
     PREDICTED_ORBIT_STEPS,
-    PREDICTED_ORBIT_DT
+    PREDICTED_ORBIT_DT,0,0,0
   );
 }
