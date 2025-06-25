@@ -3,7 +3,6 @@ import { Earth_Radius, factor } from "../physics/constants";
 import { Vector3NodeUniform } from "three/src/renderers/common/nodes/NodeUniform.js";
 import {
   calcAltitude,
-  calcRLength,
   calcSpeed,
   calculateByRungeKutta,
   newPosByEUler,
@@ -16,12 +15,13 @@ import { settings } from "../gui/gui_manager";
 
 export class Satellite {
   public name: string;
-
+public isPreview:boolean;
   // public sphere: THREE.Mesh;
   public pos: THREE.Vector3;
   public vel: THREE.Vector3;
   public altitude: number = 0;
   public totalSpeed: number = 0;
+
 
   public tailLine!: THREE.Line;
   public mesh!: THREE.Object3D;
@@ -34,13 +34,10 @@ export class Satellite {
   public predictedTailPoints: THREE.Vector3[] = [];
   public predictedTailMaterial: THREE.LineBasicMaterial | undefined;
 
-  constructor(name: string, initPos: THREE.Vector3, initV: THREE.Vector3) {
-    // const geometry = new THREE.SphereGeometry(500, 32, 32);
-    // const material = new THREE.MeshStandardMaterial({ color: 0xff00ff });
-    // this.sphere = new THREE.Mesh(geometry, material);
+  constructor(name: string, initPos: THREE.Vector3, initV: THREE.Vector3,isPreview:boolean=false) {
+    this.isPreview=isPreview;
     (this.name = name), (this.pos = initPos);
     this.vel = initV;
-    // this.setPosition();
 
     this.tailMaterial = new THREE.LineBasicMaterial({
       color: Math.floor(Math.random() * 0xffffff),
@@ -51,10 +48,12 @@ export class Satellite {
     dracoLoader.setDecoderPath("./draco/");
     loader.setDRACOLoader(dracoLoader);
 
-    loader.load(
+    if (!this.isPreview) {
+      loader.load(
       "public/models/Landsat7.glb",
       (gltf) => {
         this.mesh = gltf.scene;
+       
         scene.addToScene(this.mesh);
 
         const satScale = 800;
@@ -69,6 +68,7 @@ export class Satellite {
         console.error(`Error loading satellite model from }:`, error);
       }
     );
+    }
   }
 
   public getPosInThreeUnits(): THREE.Vector3 {
@@ -138,8 +138,28 @@ export class Satellite {
     this.setPosition();
     this.tailPoints.push(this.getPosInThreeUnits().clone());
     this.drawTail();
+//  this.calculateAndDrawPredictedOrbit(this.pos.clone(), this.vel.clone(), , dt);
+    const PREDICTED_ORBIT_STEPS = 10000;
+  const PREDICTED_ORBIT_DT = 60;
 
-    this.altitude = calcAltitude(this.pos);
+if (effectiveThrustMagnitude !== 0) { // إذا كانت المحركات تعمل
+      this.calculateAndDrawPredictedOrbit(
+        this.pos.clone(),
+        this.vel.clone(),
+        PREDICTED_ORBIT_STEPS,
+        PREDICTED_ORBIT_DT,
+        effectiveThrustMagnitude
+      );
+    } else { // إذا كانت المحركات متوقفة
+      // if (this.predictedTailLine && this.predictedTailLine.parent) {
+      //   scene.scene.remove(this.predictedTailLine);
+      //   this.predictedTailLine.geometry.dispose();
+      //   this.predictedTailLine = null!;
+      // }
+    }
+
+
+this.altitude = calcAltitude(this.pos);
     this.totalSpeed = calcSpeed(this.vel);
   }
 
@@ -161,13 +181,14 @@ export class Satellite {
     initialPos: THREE.Vector3,
     initialVel: THREE.Vector3,
     steps: number,
-    dt: number
+    dt: number,
+    currentThrustMagnitude: number = 0,
   ) {
     
     this.predictedTailPoints = [];
     let currentPos = initialPos.clone(); 
-        let currentVel = initialVel.clone(); 
-    const PREDICTION_THRUST_MAGNITUDE = 0;
+     let currentVel = initialVel.clone(); 
+    // const PREDICTION_THRUST_MAGNITUDE = 0;
     const PREDICTION_SATELLITE_MASS = 1000;
 
     for (let i = 0; i < steps; i++) {
@@ -183,7 +204,7 @@ export class Satellite {
                 currentPos,
                 currentVel,
                 dt,
-                PREDICTION_THRUST_MAGNITUDE, 
+                currentThrustMagnitude, 
                 PREDICTION_SATELLITE_MASS
             );
             currentPos.copy(newPV.pos); 
@@ -205,18 +226,39 @@ export class Satellite {
         console.warn(`Predicted orbit crashed into Earth after ${i} steps.`);
         break;
       }
+
+      
     }
 
-    const geom = new THREE.BufferGeometry().setFromPoints(
-      this.predictedTailPoints
-    );
-    if (!this.predictedTailLine) {
-      this.predictedTailLine = new THREE.Line(geom, this.predictedTailMaterial);
+const curve =new THREE.CatmullRomCurve3(this.predictedTailPoints);
+const points = curve.getPoints( this.predictedTailPoints.length );
+  const geometry = new THREE.BufferGeometry().setFromPoints( points );
+const material = new THREE.LineBasicMaterial( { color: 0xffffff } );
+
+if (!this.predictedTailLine) {
+this.predictedTailLine= new THREE.Line( geometry, material );
+
       scene.addToScene(this.predictedTailLine);
-    } else {
-      this.predictedTailLine.geometry.dispose();
-      this.predictedTailLine.geometry = geom;
-    }
+
+} else {
+  this.predictedTailLine.geometry.dispose();
+    this.predictedTailLine.geometry = geometry;
+}
+
+
+
+    // const geom = new THREE.BufferGeometry().setFromPoints(
+    //   this.predictedTailPoints
+    // );
+    // if (!this.predictedTailLine) {
+    //   this.predictedTailLine = new THREE.Line(geom, this.predictedTailMaterial);
+    //   scene.addToScene(this.predictedTailLine);
+    // } else {
+    //   this.predictedTailLine.geometry.dispose();
+    //   this.predictedTailLine.geometry = geom;
+    // }
+    return this.predictedTailLine;
+
   }
 }
 
